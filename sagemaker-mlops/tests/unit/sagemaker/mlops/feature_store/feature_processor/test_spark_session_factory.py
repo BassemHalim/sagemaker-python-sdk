@@ -14,6 +14,7 @@
 from __future__ import absolute_import
 
 import feature_store_pyspark
+import pyspark
 import pytest
 from mock import Mock, patch, call
 
@@ -72,10 +73,12 @@ def test_spark_session_factory_configuration():
 
     # Verify configurations when not running on a training job
     assert ",".join(feature_store_pyspark.classpath_jars()) in spark_configs.get("spark.jars")
+    from sagemaker.mlops.feature_store.feature_processor._spark_factory import _get_hadoop_version
+    hadoop_version = _get_hadoop_version()
     assert ",".join(
         [
-            "org.apache.hadoop:hadoop-aws:3.3.1",
-            "org.apache.hadoop:hadoop-common:3.3.1",
+            f"org.apache.hadoop:hadoop-aws:{hadoop_version}",
+            f"org.apache.hadoop:hadoop-common:{hadoop_version}",
         ]
     ) in spark_configs.get("spark.jars.packages")
 
@@ -88,8 +91,10 @@ def test_spark_session_factory_configuration_on_training_job():
     spark_config = spark_session_factory._get_spark_configs(is_training_job=True)
     assert dict(spark_config).get("spark.test.key") == "spark.test.value"
 
-    assert all(tup[0] != "spark.jars" for tup in spark_config)
     assert all(tup[0] != "spark.jars.packages" for tup in spark_config)
+
+    # spark.jars should always be present (Feature Store JARs are always on the classpath)
+    assert ",".join(feature_store_pyspark.classpath_jars()) in dict(spark_config).get("spark.jars")
 
 
 @patch("pyspark.context.SparkContext.getOrCreate")
@@ -173,3 +178,34 @@ def test_spark_session_factory_get_spark_session_with_iceberg_config(env_helper)
         == "smfs.shaded.org.apache.iceberg.aws.s3.S3FileIO"
     )
     assert iceberg_configs.get("spark.sql.catalog.catalog.glue.skip-name-validation") == "true"
+
+
+@pytest.mark.parametrize(
+    "spark_version,expected_hadoop",
+    [
+        ("3.1.3", "3.2.0"),
+        ("3.2.2", "3.3.1"),
+        ("3.3.2", "3.3.2"),
+        ("3.4.1", "3.3.4"),
+        ("3.5.1", "3.3.4"),
+    ],
+)
+def test_get_hadoop_version(spark_version, expected_hadoop):
+    with patch.object(pyspark, "__version__", spark_version):
+        from sagemaker.mlops.feature_store.feature_processor._spark_factory import _get_hadoop_version
+        assert _get_hadoop_version() == expected_hadoop
+
+
+def test_get_hadoop_version_unknown_falls_back():
+    with patch.object(pyspark, "__version__", "3.6.0"):
+        from sagemaker.mlops.feature_store.feature_processor._spark_factory import _get_hadoop_version
+        assert _get_hadoop_version() == "3.3.4"
+
+
+def test_spark_configs_use_dynamic_hadoop_version():
+    with patch.object(pyspark, "__version__", "3.5.1"):
+        env_helper = Mock()
+        factory = SparkSessionFactory(env_helper)
+        configs = dict(factory._get_spark_configs(is_training_job=False))
+        assert "org.apache.hadoop:hadoop-aws:3.3.4" in configs.get("spark.jars.packages")
+        assert "org.apache.hadoop:hadoop-common:3.3.4" in configs.get("spark.jars.packages")
