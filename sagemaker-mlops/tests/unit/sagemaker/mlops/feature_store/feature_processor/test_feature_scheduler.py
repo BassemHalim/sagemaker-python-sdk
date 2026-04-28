@@ -163,6 +163,10 @@ def config_uploader():
 
 
 @patch(
+    "sagemaker.core.remote_function.job._JobSettings._get_default_spark_image",
+    new=Mock(return_value="some_image_uri"),
+)
+@patch(
     "sagemaker.mlops.feature_store.feature_processor.feature_scheduler._validate_fg_lineage_resources",
     return_value=None,
 )
@@ -171,7 +175,7 @@ def config_uploader():
     return_value=mock_pipeline(),
 )
 @patch(
-    "sagemaker.core.remote_function.job._JobSettings._get_default_spark_image",
+    "sagemaker.mlops.feature_store.feature_processor.feature_scheduler._get_spark_image_uri",
     return_value="some_image_uri",
 )
 @patch("sagemaker.mlops.feature_store.feature_processor._config_uploader.TrainingInput")
@@ -470,9 +474,13 @@ def test_to_pipeline_not_wrapped_by_remote(get_execution_role, session):
         )
 
 
-@patch("sagemaker.core.remote_function.job.Session", return_value=mock_session())
 @patch(
     "sagemaker.core.remote_function.job._JobSettings._get_default_spark_image",
+    new=Mock(return_value="some_image_uri"),
+)
+@patch("sagemaker.core.remote_function.job.Session", return_value=mock_session())
+@patch(
+    "sagemaker.mlops.feature_store.feature_processor.feature_scheduler._get_spark_image_uri",
     return_value="some_image_uri",
 )
 @patch("sagemaker.core.remote_function.job.get_execution_role", return_value=EXECUTION_ROLE_ARN)
@@ -522,9 +530,13 @@ def test_to_pipeline_wrong_mode(get_execution_role, mock_spark_image, session):
         )
 
 
-@patch("sagemaker.core.remote_function.job.Session", return_value=mock_session())
 @patch(
     "sagemaker.core.remote_function.job._JobSettings._get_default_spark_image",
+    new=Mock(return_value="some_image_uri"),
+)
+@patch("sagemaker.core.remote_function.job.Session", return_value=mock_session())
+@patch(
+    "sagemaker.mlops.feature_store.feature_processor.feature_scheduler._get_spark_image_uri",
     return_value="some_image_uri",
 )
 @patch("sagemaker.core.remote_function.job.get_execution_role", return_value=EXECUTION_ROLE_ARN)
@@ -577,9 +589,13 @@ def test_to_pipeline_pipeline_name_length_limit_exceeds(
         )
 
 
-@patch("sagemaker.core.remote_function.job.Session", return_value=mock_session())
 @patch(
     "sagemaker.core.remote_function.job._JobSettings._get_default_spark_image",
+    new=Mock(return_value="some_image_uri"),
+)
+@patch("sagemaker.core.remote_function.job.Session", return_value=mock_session())
+@patch(
+    "sagemaker.mlops.feature_store.feature_processor.feature_scheduler._get_spark_image_uri",
     return_value="some_image_uri",
 )
 @patch("sagemaker.core.remote_function.job.get_execution_role", return_value=EXECUTION_ROLE_ARN)
