@@ -238,6 +238,7 @@ def test_prepare_step_input_channel(
     (
         input_data_config,
         spark_dependency_paths,
+        _public_key_pem,
     ) = config_uploader.prepare_step_input_channel_for_spark_mode(
         wrapped_func,
         config_uploader.remote_decorator_config.s3_root_uri,
