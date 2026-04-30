@@ -822,15 +822,23 @@ class _JobSettings:
 
         py_version = str(sys.version_info[0]) + str(sys.version_info[1])
 
-        if py_version not in ["39"]:
+        if py_version not in ["39", "312"]:
             raise ValueError(
-                "The SageMaker Spark image for remote job only supports Python version 3.9. "
+                "The SageMaker Spark image for remote job only supports Python versions 3.9 and 3.12."
             )
+
+        # Detect Spark version from installed pyspark, fall back to default
+        spark_version = DEFAULT_SPARK_VERSION
+        try:
+            import pyspark
+            spark_version = ".".join(pyspark.__version__.split(".")[:2])
+        except ImportError:
+            pass
 
         image_uri = image_uris.retrieve(
             framework=SPARK_NAME,
             region=region,
-            version=DEFAULT_SPARK_VERSION,
+            version=spark_version,
             instance_type=None,
             py_version=f"py{py_version}",
             container_version=DEFAULT_SPARK_CONTAINER_VERSION,
