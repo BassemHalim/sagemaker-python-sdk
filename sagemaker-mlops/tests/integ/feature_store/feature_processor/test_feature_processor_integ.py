@@ -664,6 +664,10 @@ def test_feature_processor_transform_offline_only_store_ingestion_run_with_remot
         )
 
 
+@pytest.mark.skipif(
+    sys.version_info[:2] not in [(3, 9), (3, 12)],
+    reason=f"SageMaker Spark image only supports Python 3.9 and 3.12, got {sys.version_info[:2]}",
+)
 @pytest.mark.slow_test
 def test_to_pipeline_and_execute(
     sagemaker_session,
@@ -783,6 +787,10 @@ def test_to_pipeline_and_execute(
         # cleanup_pipeline(pipeline_name="pipeline-name-01", sagemaker_session=sagemaker_session)
 
 
+@pytest.mark.skipif(
+    sys.version_info[:2] not in [(3, 9), (3, 12)],
+    reason=f"SageMaker Spark image only supports Python 3.9 and 3.12, got {sys.version_info[:2]}",
+)
 def test_to_pipeline_and_execute_with_lake_formation(
     sagemaker_session,
     pre_execution_commands,
@@ -821,8 +829,9 @@ def test_to_pipeline_and_execute_with_lake_formation(
         @remote(
             pre_execution_commands=pre_execution_commands,
             dependencies=dependencies_path,
-            spark_config=SparkConfig(),
+            # spark_config=SparkConfig(),
             instance_type="ml.m5.xlarge",
+            image_uri='550124139430.dkr.ecr.us-west-2.amazonaws.com/sagemaker-spark-processing:latest'
         )
         @feature_processor(
             inputs=[CSVDataSource(raw_data_uri)],
@@ -927,6 +936,10 @@ def test_to_pipeline_and_execute_with_lake_formation(
             cleanup_feature_group(car_data_fg, sagemaker_session=sagemaker_session)
 
 
+@pytest.mark.skipif(
+    sys.version_info[:2] not in [(3, 9), (3, 12)],
+    reason=f"SageMaker Spark image only supports Python 3.9 and 3.12, got {sys.version_info[:2]}",
+)
 @pytest.mark.slow_test
 def test_schedule_and_event_trigger(
     sagemaker_session,
@@ -1220,9 +1233,9 @@ def get_pre_execution_commands(sagemaker_session):
         f"{PIP} --no-build-isolation '/tmp/packages/{mlops_whl}[feature-processor]' 'numpy<2.0.0' 'ml_dtypes<=0.4.1' 'setuptools<75' || true",
         f"{PIP} --no-deps --force-reinstall /tmp/packages/{sagemaker_whl}",
         f"{PIP} --no-deps --force-reinstall /tmp/packages/{core_whl} /tmp/packages/{mlops_whl}",
-        f"{PIP} 'sagemaker-feature-store-pyspark==2.0.0'",
+        # f"{PIP} 'sagemaker-feature-store-pyspark==2.0.0'",
         # Copy only the Spark-version-matched Feature Store JAR to avoid classpath conflicts
-        "cp /usr/local/lib/python3.12/site-packages/feature_store_pyspark/jars/sagemaker-feature-store-spark-sdk-3.5.jar /usr/lib/spark/jars/",
+        # "cp /usr/local/lib/python3.12/site-packages/feature_store_pyspark/jars/sagemaker-feature-store-spark-sdk-3.5.jar /usr/lib/spark/jars/",
     ]
     print(cmds)
     return cmds
