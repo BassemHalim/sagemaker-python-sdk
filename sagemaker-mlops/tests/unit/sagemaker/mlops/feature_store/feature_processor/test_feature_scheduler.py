@@ -302,7 +302,15 @@ def test_to_pipeline(
     mock_dependency_upload.assert_called_once_with(
         "/tmp/snapshot",
         True,
-        None,
+        [
+            "pip install --root-user-action=ignore 'sagemaker-feature-store-pyspark>=2,<3'",
+            (
+                "python3 -c \"import feature_store_pyspark, shutil, os, glob; "
+                "jars_dir = os.path.join(os.path.dirname(feature_store_pyspark.__file__), 'jars'); "
+                "[shutil.copy(j, '/usr/lib/spark/jars/') "
+                "for j in glob.glob(os.path.join(jars_dir, '*3.5*.jar'))]\""
+            ),
+        ],
         None,
         f"{S3_URI}/pipeline_name",
         None,
