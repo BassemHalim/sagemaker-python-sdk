@@ -670,6 +670,25 @@ class _JobSettings:
             sagemaker_session=self.sagemaker_session,
         )
 
+        # When using Spark, ensure sagemaker-feature-store-pyspark is installed
+        # and its version-matched JAR is on Spark's classpath before spark-submit
+        if spark_config:
+            install_cmd = (
+                "pip install --root-user-action=ignore"
+                " 'sagemaker-feature-store-pyspark>=2,<3'"
+            )
+            copy_jar_cmd = (
+                "python3 -c \"import feature_store_pyspark, shutil, os, glob; "
+                "jars_dir = os.path.join(os.path.dirname(feature_store_pyspark.__file__), 'jars'); "
+                "[shutil.copy(j, '/usr/lib/spark/jars/') "
+                "for j in glob.glob(os.path.join(jars_dir, '*3.5*.jar'))]\""
+            )
+            if self.pre_execution_commands is None:
+                self.pre_execution_commands = [install_cmd, copy_jar_cmd]
+            elif install_cmd not in self.pre_execution_commands:
+                self.pre_execution_commands.append(install_cmd)
+                self.pre_execution_commands.append(copy_jar_cmd)
+
         self.pre_execution_script = resolve_value_from_config(
             direct_input=pre_execution_script,
             config_path=REMOTE_FUNCTION_PRE_EXECUTION_SCRIPT,
