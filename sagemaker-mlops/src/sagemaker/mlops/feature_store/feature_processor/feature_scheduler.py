@@ -1048,6 +1048,14 @@ def _get_remote_decorator_config_from_input(
     if not remote_decorator_config.image_uri:
         remote_decorator_config.image_uri = _get_spark_image_uri(sagemaker_session)
 
+    # Ensure sagemaker-feature-store-pyspark is installed on the remote container
+    install_cmd = "pip install 'sagemaker-feature-store-pyspark>=2,<3'"
+    if remote_decorator_config.pre_execution_commands:
+        if install_cmd not in remote_decorator_config.pre_execution_commands:
+            remote_decorator_config.pre_execution_commands.append(install_cmd)
+    else:
+        remote_decorator_config.pre_execution_commands = [install_cmd]
+
     return remote_decorator_config
 
 

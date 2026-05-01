@@ -528,6 +528,10 @@ def test_feature_processor_transform_offline_only_store_ingestion(
         )
 
 
+@pytest.mark.skipif(
+    sys.version_info[:2] not in [(3, 9), (3, 12)],
+    reason=f"SageMaker Spark image only supports Python 3.9 and 3.12, got {sys.version_info[:2]}",
+)
 @pytest.mark.slow_test
 def test_feature_processor_transform_offline_only_store_ingestion_run_with_remote(
     sagemaker_session,
@@ -1224,18 +1228,15 @@ def get_pre_execution_commands(sagemaker_session):
     s3_prefix, wheel_names = get_wheel_file_s3_uri(sagemaker_session=sagemaker_session)
     sagemaker_whl, core_whl, mlops_whl = wheel_names
     print(f'{sagemaker_whl=}, {core_whl=}, {mlops_whl=}')
-    PIP = "python3.12 -m pip install --root-user-action=ignore"
-    AWS = "python3.12 -m awscli"
+    PIP = "python3 -m pip install --root-user-action=ignore"
+    AWS = "python3 -m awscli"
     cmds =  [
         f"{PIP} awscli",
         f"{AWS} s3 cp {s3_prefix}/ /tmp/packages/ --recursive",
         f"{PIP} 'setuptools<75'",
-        f"{PIP} --no-build-isolation '/tmp/packages/{mlops_whl}[feature-processor]' 'numpy<2.0.0' 'ml_dtypes<=0.4.1' 'setuptools<75' || true",
+        f"{PIP} --no-build-isolation '/tmp/packages/{mlops_whl}' 'numpy<2.0.0' 'ml_dtypes<=0.4.1' 'setuptools<75' || true",
         f"{PIP} --no-deps --force-reinstall /tmp/packages/{sagemaker_whl}",
         f"{PIP} --no-deps --force-reinstall /tmp/packages/{core_whl} /tmp/packages/{mlops_whl}",
-        # f"{PIP} 'sagemaker-feature-store-pyspark==2.0.0'",
-        # Copy only the Spark-version-matched Feature Store JAR to avoid classpath conflicts
-        # "cp /usr/local/lib/python3.12/site-packages/feature_store_pyspark/jars/sagemaker-feature-store-spark-sdk-3.5.jar /usr/lib/spark/jars/",
     ]
     print(cmds)
     return cmds
