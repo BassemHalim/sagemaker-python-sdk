@@ -18,6 +18,8 @@ import re
 from datetime import datetime
 from typing import Callable, List, Optional, Dict, Sequence, Union, Any, Tuple
 
+import pyspark
+
 import pytz
 from botocore.exceptions import ClientError
 
@@ -1049,12 +1051,22 @@ def _get_remote_decorator_config_from_input(
         remote_decorator_config.image_uri = _get_spark_image_uri(sagemaker_session)
 
     # Ensure sagemaker-feature-store-pyspark is installed on the remote container
+    # and its Spark-version-matched JAR is on Spark's classpath at startup
     install_cmd = "pip install 'sagemaker-feature-store-pyspark>=2,<3'"
+    spark_major_minor = pyspark.__version__.rsplit(".", 1)[0]
+    copy_jar_cmd = (
+        "python3 -c \""
+        "import feature_store_pyspark, shutil, glob, os; "
+        f"jars = glob.glob(os.path.join(os.path.dirname(feature_store_pyspark.__file__), 'jars', '*{spark_major_minor}*')); "
+        "[shutil.copy(j, '/usr/lib/spark/jars/') for j in jars]"
+        "\""
+    )
     if remote_decorator_config.pre_execution_commands:
         if install_cmd not in remote_decorator_config.pre_execution_commands:
             remote_decorator_config.pre_execution_commands.append(install_cmd)
+            remote_decorator_config.pre_execution_commands.append(copy_jar_cmd)
     else:
-        remote_decorator_config.pre_execution_commands = [install_cmd]
+        remote_decorator_config.pre_execution_commands = [install_cmd, copy_jar_cmd]
 
     return remote_decorator_config
 
