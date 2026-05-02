@@ -795,6 +795,7 @@ def test_to_pipeline_and_execute(
     sys.version_info[:2] not in [(3, 9), (3, 12)],
     reason=f"SageMaker Spark image only supports Python 3.9 and 3.12, got {sys.version_info[:2]}",
 )
+@pytest.mark.slow_test
 def test_to_pipeline_and_execute_with_lake_formation(
     sagemaker_session,
     pre_execution_commands,
@@ -833,9 +834,8 @@ def test_to_pipeline_and_execute_with_lake_formation(
         @remote(
             pre_execution_commands=pre_execution_commands,
             dependencies=dependencies_path,
-            # spark_config=SparkConfig(),
+            spark_config=SparkConfig(),
             instance_type="ml.m5.xlarge",
-            image_uri='550124139430.dkr.ecr.us-west-2.amazonaws.com/sagemaker-spark-processing:latest'
         )
         @feature_processor(
             inputs=[CSVDataSource(raw_data_uri)],
@@ -934,7 +934,6 @@ def test_to_pipeline_and_execute_with_lake_formation(
                 logging.info(
                     f"Deleted Glue table {data_catalog_config.database}.{data_catalog_config.table_name}"
                 )
-                raise Exception('noop')
             except Exception as e:
                 logging.warning(f"Failed to delete Glue table: {e}")
             cleanup_feature_group(car_data_fg, sagemaker_session=sagemaker_session)

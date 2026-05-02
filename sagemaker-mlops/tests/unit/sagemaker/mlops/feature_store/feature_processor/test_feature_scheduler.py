@@ -305,10 +305,9 @@ def test_to_pipeline(
         [
             "pip install --root-user-action=ignore 'sagemaker-feature-store-pyspark>=2,<3'",
             (
-                "python3 -c \"import feature_store_pyspark, shutil, os, glob; "
-                "jars_dir = os.path.join(os.path.dirname(feature_store_pyspark.__file__), 'jars'); "
+                "python3 -c \"import feature_store_pyspark, shutil; "
                 "[shutil.copy(j, '/usr/lib/spark/jars/') "
-                "for j in glob.glob(os.path.join(jars_dir, '*3.5*.jar'))]\""
+                "for j in feature_store_pyspark.classpath_jars()]\""
             ),
         ],
         None,
