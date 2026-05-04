@@ -209,3 +209,28 @@ def test_spark_configs_use_dynamic_hadoop_version():
         configs = dict(factory._get_spark_configs(is_training_job=False))
         assert "org.apache.hadoop:hadoop-aws:3.3.4" in configs.get("spark.jars.packages")
         assert "org.apache.hadoop:hadoop-common:3.3.4" in configs.get("spark.jars.packages")
+
+
+@patch("os.path.isdir", return_value=False)
+def test_install_feature_store_jars_skips_when_no_target_dir(mock_isdir):
+    SparkSessionFactory._install_feature_store_jars()
+    mock_isdir.assert_called_once_with("/usr/lib/spark/jars")
+
+
+@patch("shutil.copy")
+@patch("os.path.exists", return_value=False)
+@patch("os.path.isdir", return_value=True)
+@patch("feature_store_pyspark.classpath_jars")
+def test_install_feature_store_jars_copies_matching_jars(
+    mock_classpath, mock_isdir, mock_exists, mock_copy
+):
+    mock_classpath.return_value = [
+        "/path/to/jar-3.5-something.jar",
+        "/path/to/jar-3.3-something.jar",
+    ]
+    with patch.object(pyspark, "__version__", "3.5.1"):
+        SparkSessionFactory._install_feature_store_jars()
+    mock_copy.assert_called_once_with(
+        "/path/to/jar-3.5-something.jar",
+        "/usr/lib/spark/jars/jar-3.5-something.jar",
+    )
