@@ -135,6 +135,18 @@ class TestJobSettingsValidation:
             ):
                 _JobSettings._get_default_spark_image(mock_session)
 
+    @patch("sagemaker.core.remote_function.job.image_uris.retrieve", return_value="mock-image-uri")
+    def test_get_default_spark_image_auto_detects_pyspark_version(
+        self, mock_retrieve, mock_session
+    ):
+        import pyspark
+
+        with patch.object(sys, "version_info", (3, 9, 0)):
+            with patch.object(pyspark, "__version__", "3.5.1"):
+                result = _JobSettings._get_default_spark_image(mock_session)
+        assert result == "mock-image-uri"
+        assert mock_retrieve.call_args.kwargs["version"] == "3.5"
+
 
 class TestJobMethods:
     """Test _Job class methods for uncovered lines."""
