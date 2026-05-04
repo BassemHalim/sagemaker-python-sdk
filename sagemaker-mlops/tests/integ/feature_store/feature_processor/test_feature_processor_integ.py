@@ -1237,7 +1237,6 @@ def get_pre_execution_commands(sagemaker_session):
         f"{PIP} --no-deps --force-reinstall /tmp/packages/{sagemaker_whl}",
         f"{PIP} --no-deps --force-reinstall /tmp/packages/{core_whl} /tmp/packages/{mlops_whl}",
     ]
-    print(cmds)
     return cmds
 
 
