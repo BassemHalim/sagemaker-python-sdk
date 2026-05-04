@@ -15,8 +15,6 @@ from __future__ import absolute_import
 
 import sys
 
-import pyspark
-
 from sagemaker.core import image_uris
 
 SPARK_IMAGE_SUPPORT_MATRIX = {
@@ -39,6 +37,8 @@ def _get_spark_image_uri(session):
     Raises:
         ValueError: If the Spark/Python version combination is not supported.
     """
+    import pyspark
+
     spark_version = ".".join(pyspark.__version__.split(".")[:2])
     py_version = f"py{sys.version_info[0]}{sys.version_info[1]}"
 
